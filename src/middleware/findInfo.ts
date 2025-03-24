@@ -19,8 +19,11 @@ export const idValidation = [
 // valida que el email este disponible
 export const emailValidation = [
   body('email')
+    .notEmpty()
+    .withMessage('El correo no puede ser vacio.')
     .isEmail()
     .withMessage('Debe ser un correo válido')
+    
     .custom(async (email) => {
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
@@ -29,6 +32,21 @@ export const emailValidation = [
     }),
 ];
 
+// valida que el email este disponible
+export const emailLoginValidation = [
+  param('email')
+    .notEmpty()
+    .withMessage('El correo no puede ser vacio.')
+    .isEmail()
+    .withMessage('Debe ser un correo válido')
+    
+    .custom(async (email) => {
+      const existingUser = await User.findOne({ where: { email } });
+      if (!existingUser) {
+        throw new Error(`El correo ${email} no está asociado a un usuario, intente con un correo diferente.`);
+      }
+    }),
+];
 // verifica que el número de documento este libre.
 export const documentNumberValidation = [
   body('documentNumber')
@@ -80,15 +98,15 @@ export const roleIdValidation = [
 
 // Validación de `typeDocument`
 export const typeDocumentValidation = [
-  body('typeDocument')
+  body('typeDocumentId')
     .notEmpty()
     .withMessage('El tipo de documento no puede estar vacío.')
     .isInt({ min: 1 })
     .withMessage('El tipo de documento debe ser un número entero válido.')
-    .custom(async (typeDocument) => {
-      const existingTypeDocument = await TypeDocument.findByPk(typeDocument); // Verificamos si el typeDocument existe en la tabla TypeDocument
+    .custom(async (typeDocumentId) => {
+      const existingTypeDocument = await TypeDocument.findByPk(typeDocumentId); // Verificamos si el typeDocument existe en la tabla TypeDocument
       if (!existingTypeDocument) {
-        throw new Error(`El tipo de documento con ID ${typeDocument} no existe en la base de datos.`);
+        throw new Error(`El tipo de documento con ID ${typeDocumentId} no existe en la base de datos.`);
       }
     }),
 ];

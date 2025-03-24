@@ -1,14 +1,11 @@
 import { Request, Response } from 'express';
 import { createUserService } from '../services/create/create';
 import { InferCreationAttributes } from 'sequelize';
-import { getAllUsersService, getRolesService, getTypeDocumentsService, getUserByIdService } from '../services/find/find';
+import { getAllUsersService, getRolesService, getTypeDocumentsService, getUserByEmailService, getUserByIdService } from '../services/find/find';
 import { toggleUserStatusService, updateUserService } from '../services/update/update';
 import { User } from '../models/user';
 import bcrypt from 'bcrypt';
-import dotenv from 'dotenv';
-
-// Cargar las variables de entorno desde el archivo .env
-dotenv.config();
+import { config } from '../utils/config';
 
 // Obtener todos los usuarios
 export const getAllUsersController = async (req: Request, res: Response): Promise<void> => {
@@ -57,7 +54,7 @@ export const updateUserController = async (req: Request, res: Response): Promise
     roleId: parseInt(roleId),
     documentNumber:documentNumber.toString(),
     phoneNumber:phoneNumber.toString(),
-    typeDocument:parseInt(typeDocument),
+    typeDocumentId:parseInt(typeDocument),
   };
 
   try {
@@ -103,12 +100,12 @@ export const createUserController = async (req: Request, res: Response): Promise
       roleId,
       companyId,
       createdBy,
-      typeDocument,
+      typeDocumentId,
       documentNumber,
       phoneNumber,
     } = req.body;
 
-    const saltRounds = parseInt(process.env.limitPassword!);
+    const saltRounds = config.LIMIT_PASSWORD!;
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -120,7 +117,7 @@ export const createUserController = async (req: Request, res: Response): Promise
       roleId,
       companyId,
       createdBy,
-      typeDocument,
+      typeDocumentId,
       documentNumber,
       phoneNumber,
     };
@@ -130,6 +127,20 @@ export const createUserController = async (req: Request, res: Response): Promise
     res.status(500).json({ error: `Error al crear el usuario: ${error.message}` });
   }
 };
+
+
+// Obtener un usuario por correo
+export const getUserByEmailController = async (req: Request, res: Response): Promise<void> => {
+  const { email } = req.params;
+  try {
+    const user = await getUserByEmailService({ email });
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener el usuario' });
+  }
+};
+
+
 
 // Obtener roles
 export const getRolesController = async (req: Request, res: Response): Promise<void> => {
@@ -141,7 +152,7 @@ export const getRolesController = async (req: Request, res: Response): Promise<v
   }
 };
 
-// Obtener roles
+// Obtener tipos de documento
 export const getTypeDocumentsController = async (req: Request, res: Response): Promise<void> => {
   try {
     const TypeDocuments = await getTypeDocumentsService();

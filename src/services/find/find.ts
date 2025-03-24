@@ -41,22 +41,28 @@ export const getAllUsersService = async ({
     // Construir la consulta SQL con los filtros y paginación
     const query = `
       SELECT 
-        u.id, 
-        u.firstName, 
-        u.lastName, 
-        u.email, 
-        u.isGoogle, 
-        u.isActive, 
-        u.reputation, 
-        u.roleId, 
-        u.typeDocument,
-        u.documentNumber,
-        u.phoneNumber,
-        r.name as roleName,
-        td.name as TypeDocumentName
+      u.id, 
+      u.firstName, 
+      u.lastName, 
+      u.email, 
+      u.isGoogle, 
+      u.isActive, 
+      u.reputation, 
+      u.roleId,
+      u.typeDocumentId,
+      u.documentNumber,
+      u.phoneNumber,
+      u.companyId,
+      r.roleName,
+      r.isActive AS activeRole,
+      td.typeDocumentName,
+      td.isActive AS activeTypeDocument,
+      c.companyName,
+      c.isActive AS activeCompany
       FROM users as u
       INNER JOIN roles as r on (u.roleId = r.id)
-      INNER JOIN type_documents as td on (u.typeDocument = td.id)
+      INNER JOIN type_documents as td on (u.typeDocumentId = td.id)
+      INNER JOIN companies as c on (c.id = u.companyId)
       WHERE (:dateInit IS NULL OR u.createdAt >= :dateInit)
       AND (:dateEnd IS NULL OR u.createdAt <= :dateEnd)
       AND (:isActive IS NULL OR u.isActive = :isActive)
@@ -87,7 +93,8 @@ export const getAllUsersService = async ({
       SELECT COUNT(*) AS total
       FROM users as u
       INNER JOIN roles as r on (u.roleId = r.id)
-      INNER JOIN type_documents as td on (u.typeDocument = td.id)
+      INNER JOIN type_documents as td on (u.typeDocumentId = td.id)
+      INNER JOIN companies as c on (c.id = u.companyId)
       WHERE (:dateInit IS NULL OR u.createdAt >= :dateInit)
       AND (:dateEnd IS NULL OR u.createdAt <= :dateEnd)
       AND (:isActive IS NULL OR u.isActive = :isActive)
@@ -131,27 +138,28 @@ export const getUserByIdService = async ({ id }: { id: number }) => {
   try {
     // Construir la consulta SQL para obtener el usuario con datos del rol y la compañía
     const query = `
-      SELECT 
-        u.id, 
-        u.firstName, 
-        u.lastName, 
-        u.email, 
-        u.isGoogle, 
-        u.isActive, 
-        u.reputation, 
-        u.roleId,
-        u.typeDocument,
-        u.documentNumber,
-        u.phoneNumber,
-        r.name as roleName,
-        r.isActive as roleIsActive,
-        td.name as TypeDocumentName,
-        td.isActive as typeDocumentIsActive,
-        c.name as nameCompany,
-        c.isActive as companyIsActive
+     SELECT 
+      u.id, 
+      u.firstName, 
+      u.lastName, 
+      u.email, 
+      u.isGoogle, 
+      u.isActive, 
+      u.reputation, 
+      u.roleId,
+      u.typeDocumentId,
+      u.documentNumber,
+      u.phoneNumber,
+      u.companyId,
+      r.roleName,
+      r.isActive AS activeRole,
+      td.typeDocumentName,
+      td.isActive AS activeTypeDocument,
+      c.companyName,
+      c.isActive AS activeCompany
       FROM users u
       INNER JOIN roles r ON u.roleId = r.id
-      INNER JOIN type_documents as td on (u.typeDocument = td.id)
+      INNER JOIN type_documents as td on (u.typeDocumentId = td.id)
       INNER JOIN companies as c on (c.id = u.companyId)
       WHERE u.id = :id
     `;
@@ -163,6 +171,53 @@ export const getUserByIdService = async ({ id }: { id: number }) => {
     });
 
     return { isActive: true, messge: `Usuario encontrado con el id ${id}`, user: user![0] }; // Sequelize devuelve un array, devolver el primer elemento
+  } catch (error: any) {
+    console.log(error);
+
+    throw new Error('Error al obtener el usuario: ' + error.message);
+  }
+};
+
+export const getUserByEmailService = async ({ email }: { email: string }) => {
+  try {
+    // Construir la consulta SQL para obtener el usuario con datos del rol y la compañía
+    const query = `
+      SELECT 
+      u.id, 
+      u.firstName, 
+      u.lastName, 
+      u.email, 
+      u.isGoogle, 
+      u.isActive, 
+      u.reputation, 
+      u.roleId,
+      u.typeDocumentId,
+      u.documentNumber,
+      u.phoneNumber,
+      u.companyId,
+      u.password,
+      r.roleName,
+      r.isActive AS activeRole,
+      td.typeDocumentName,
+      td.isActive AS activeTypeDocument,
+      c.companyName,
+      c.isActive AS activeCompany
+      FROM users u
+      INNER JOIN roles r ON u.roleId = r.id
+      INNER JOIN type_documents as td on (u.typeDocumentId = td.id)
+      INNER JOIN companies as c on (c.id = u.companyId)
+      WHERE u.email = :email
+    `;
+
+    // Ejecutar la consulta con el parámetro I
+    const user = await User.sequelize?.query(query, {
+      replacements: { email },
+      type: QueryTypes.SELECT,
+    });
+
+    console.log({ user });
+
+    return { isActive: true, messge: `Usuario encontrado con el correo ${email}`, user: user![0] }; // Sequelize devuelve un array, devolver el primer elemento
   } catch (error: any) {
     console.log(error);
 

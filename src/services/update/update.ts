@@ -10,7 +10,7 @@ export const updateUserService = async ({
   roleId,
   documentNumber,
   phoneNumber,
-  typeDocument,
+  typeDocumentId,
 }: {
   id: number;
   firstName: string;
@@ -20,7 +20,7 @@ export const updateUserService = async ({
   roleId: number;
   documentNumber: string;
   phoneNumber: string;
-  typeDocument: number;
+  typeDocumentId: number;
 }) => {
   try {
     // Preparar el payload para la actualización
@@ -32,7 +32,7 @@ export const updateUserService = async ({
       roleId,
       documentNumber,
       phoneNumber,
-      typeDocument,
+      typeDocumentId,
     };
 
     // Realizar la actualización

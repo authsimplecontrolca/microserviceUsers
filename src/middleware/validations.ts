@@ -1,5 +1,5 @@
 import { body } from 'express-validator';
-import { documentNumberValidation, emailValidation, idValidation, phoneNumberValidation, roleIdValidation, typeDocumentValidation } from './findInfo';
+import { documentNumberValidation, emailLoginValidation, emailValidation, idValidation, phoneNumberValidation, roleIdValidation, typeDocumentValidation } from './findInfo';
 import { allValidator } from '../utils/expressValidator';
 
 export const filterUsersValidator = [
@@ -65,6 +65,10 @@ export const filterUsersValidator = [
 
 export const idUserValidation = [
   ...idValidation, // Valida si el correo es único
+  allValidator,
+];
+export const EmailUserValidation = [
+  ...emailLoginValidation, // Valida si el correo es único
   allValidator,
 ];
 

@@ -1,9 +1,10 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { connectDB } from './config/database';
 import { router } from './routes/routes';
+import { config } from './utils/config';
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = config.PORT;
 
 // Middlewares
 app.use(express.json()); // Para JSON
@@ -19,8 +20,12 @@ app.get('/api', (req:Request, res:Response) => {
 
 // Ruta no encontrada (404)
 app.use((req: Request, res: Response) => {
-  res.status(404).json({ message: 'Ruta no encontrada' });
+  res.status(404).json({ 
+    message: 'Ruta no encontrada', 
+    requestedRoute: req.originalUrl // Aquí se agrega la ruta solicitada
+  });
 });
+
 
 // Middleware de errores
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

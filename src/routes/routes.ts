@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   createUserValidator,
+  EmailUserValidation,
   filterUsersValidator,
   idUserValidation,
   updateUserValidator,
@@ -10,6 +11,7 @@ import {
   getAllUsersController,
   getRolesController,
   getTypeDocumentsController,
+  getUserByEmailController,
   getUserByIdController,
   toggleUserStatusController,
   updateUserController,
@@ -23,6 +25,8 @@ router.post('/create', createUserValidator, createUserController);
 
 // Obtener un usuario por ID
 router.get('/find/:id', idUserValidation, getUserByIdController);
+
+router.get('/find/login/:email', EmailUserValidation, getUserByEmailController);
 
 // Obtener todos los usuarios
 router.get('/all', filterUsersValidator, getAllUsersController);
