@@ -1,5 +1,18 @@
 import { body } from 'express-validator';
-import { documentNumberValidation, emailLoginValidation, emailValidation, idValidation, phoneNumberValidation, roleIdValidation, typeDocumentValidation } from './findInfo';
+import {
+  documentNumberOptionaValidation,
+  documentNumberValidation,
+  emailLoginValidation,
+  emailOptionaValidation,
+  emailValidation,
+  idValidation,
+  phoneNumberOptionaValidation,
+  phoneNumberValidation,
+  roleIdOptionalValidation,
+  roleIdValidation,
+  typeDocumentOptionaValidation,
+  typeDocumentValidation,
+} from './findInfo';
 import { allValidator } from '../utils/expressValidator';
 
 export const filterUsersValidator = [
@@ -75,6 +88,7 @@ export const EmailUserValidation = [
 export const updateUserValidator = [
   // Validación de `firstName`
   body('firstName')
+    .optional()
     .isString()
     .withMessage('Por favor, ingresa un nombre válido.')
     .notEmpty()
@@ -84,6 +98,7 @@ export const updateUserValidator = [
 
   // Validación de `lastName`
   body('lastName')
+  .optional()
     .isString()
     .withMessage('Por favor, ingresa un apellido válido.')
     .notEmpty()
@@ -92,24 +107,23 @@ export const updateUserValidator = [
     .withMessage('El apellido debe tener entre 3 y 50 caracteres.'),
 
   // Validación de `email`
-  body('email').isEmail().withMessage('Por favor, ingresa un correo electrónico válido.').normalizeEmail(),
+  body('email').optional().isEmail().withMessage('Por favor, ingresa un correo electrónico válido.').normalizeEmail(),
 
-  ...emailValidation, // Valida si el correo es único
+  ...emailOptionaValidation, // Valida si el correo es único
 
-  ...documentNumberValidation,
+  ...documentNumberOptionaValidation,
 
-  ...phoneNumberValidation,
+  ...phoneNumberOptionaValidation,
 
-  ...typeDocumentValidation,
+  ...typeDocumentOptionaValidation,
 
-  ...roleIdValidation,
+  ...roleIdOptionalValidation,
 
   // Validación de `reputation` (opcional, por si se actualiza)
   body('reputation').optional().isInt({ min: 0, max: 5 }).withMessage('La reputación debe estar entre 0 y 5.'),
 
-  // Validación de `roleId`
-  body('roleId').isInt({ min: 1 }).withMessage('Por favor, selecciona un rol válido.'),
-  
+
+
   allValidator,
 ];
 
@@ -173,6 +187,5 @@ export const createUserValidator = [
     .notEmpty()
     .withMessage('El createdBy no puede estar vacío.'),
 
-    
   allValidator,
 ];

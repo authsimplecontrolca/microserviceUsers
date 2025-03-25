@@ -1,163 +1,124 @@
 import { Request, Response } from 'express';
+import asyncHandler from 'express-async-handler';
+import bcrypt from 'bcrypt';
+
 import { createUserService } from '../services/create/create';
-import { InferCreationAttributes } from 'sequelize';
-import { getAllUsersService, getRolesService, getTypeDocumentsService, getUserByEmailService, getUserByIdService } from '../services/find/find';
+import {
+  getAllUsersService,
+  getUserByIdService,
+  getUserByEmailService,
+  getRolesService,
+  getTypeDocumentsService,
+} from '../services/find/find';
 import { toggleUserStatusService, updateUserService } from '../services/update/update';
 import { User } from '../models/user';
-import bcrypt from 'bcrypt';
 import { config } from '../utils/config';
+import { errorResponse, successResponse } from '../utils/bodyResponseApi';
+import { InferCreationAttributes } from 'sequelize';
 
-// Obtener todos los usuarios
-export const getAllUsersController = async (req: Request, res: Response): Promise<void> => {
-  const { dateInit, dateEnd, isActive, search, roleId, companyId, limit, page, order } = req.body;
-  try {
-    const listUsers = await getAllUsersService({
-      dateInit,
-      dateEnd,
-      isActive,
-      search,
-      roleId,
-      companyId,
-      limit,
-      page,
-      order,
-    });
-    res.status(200).json(listUsers);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener los usuarios' });
-  }
+const SUCCESS_MESSAGES = {
+  usersList: 'Listado de usuarios encontrados',
+  userFound: (id: string) => `Resultado de la búsqueda con el ID ${id}`,
+  userCreated: 'Usuario creado con éxito',
+  userUpdated: 'Usuario actualizado correctamente',
+  userNoUpdated: 'Usuario no actualizado, no hubo cambios.',
+  userStatusToggled: 'Estado del usuario actualizado correctamente',
+  rolesFound: 'Roles activos encontrados',
+  typeDocsFound: 'Tipos de documentos activos encontrados',
+  userFoundEmail: (email: string) => `Resultado de la búsqueda con el correo ${email}`,
 };
 
-// Obtener un usuario por ID
-export const getUserByIdController = async (req: Request, res: Response): Promise<void> => {
+export const getAllUsersController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const listUsers = await getAllUsersService(req.body);
+  res.status(200).json(successResponse({ message: SUCCESS_MESSAGES.usersList, data: listUsers }));
+});
+
+export const getUserByIdController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  try {
-    const user = await getUserByIdService({ id: parseInt(id) });
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener el usuario' });
+  const user = await getUserByIdService({ id: Number(id) });
+  res.status(200).json(successResponse({ message: SUCCESS_MESSAGES.userFound(id), data: user }));
+});
+
+export const updateUserController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const { firstName, lastName, email, reputation, roleId, documentNumber, phoneNumber, typeDocumentId } = req.body;
+
+  const payload: any = { id }; // se inicia el objeto con el id
+
+  if (firstName) payload.firstName = String(firstName);
+  if (lastName) payload.lastName = String(lastName);
+  if (email) payload.email = String(email);
+  if (reputation) payload.reputation = Number(reputation);
+  if (roleId) payload.roleId = Number(roleId);
+  if (documentNumber) payload.documentNumber = String(documentNumber);
+  if (phoneNumber) payload.phoneNumber = String(phoneNumber);
+  if (typeDocumentId) payload.typeDocumentId = Number(typeDocumentId);
+
+  const wasUpdated = await updateUserService(payload);
+
+  if (!wasUpdated) {
+    res.status(400).json(errorResponse({ message: SUCCESS_MESSAGES.userNoUpdated }));
+    return;
   }
-};
+  res.status(200).json(successResponse({ message: SUCCESS_MESSAGES.userUpdated }));
+});
 
-// Actualizar un usuario por ID
-export const updateUserController = async (req: Request, res: Response): Promise<void> => {
+export const toggleUserStatusController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { firstName, lastName, email, reputation, roleId, documentNumber, phoneNumber, typeDocument } = req.body;
+  const result = await toggleUserStatusService({ id: Number(id) });
 
-  // Preparar el payload para la actualización
-  const payload = {
-    id: parseInt(id),
-    firstName: firstName.toString(),
-    lastName: lastName.toString(),
-    email: email.toString(),
-    reputation: parseInt(reputation),
-    roleId: parseInt(roleId),
-    documentNumber:documentNumber.toString(),
-    phoneNumber:phoneNumber.toString(),
-    typeDocumentId:parseInt(typeDocument),
+  if (!result.status) {
+    res.status(400).json(errorResponse({ message: result.message }));
+    return;
+  }
+  res.status(200).json(successResponse({ message: SUCCESS_MESSAGES.userStatusToggled }));
+});
+
+export const createUserController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    roleId,
+    companyId,
+    createdBy,
+    typeDocumentId,
+    documentNumber,
+    phoneNumber,
+  } = req.body;
+
+  const hashedPassword = await bcrypt.hash(password, config.LIMIT_PASSWORD!);
+
+  const userData: InferCreationAttributes<User, { omit: 'id' | 'createdAt' | 'updatedAt' }> = {
+    firstName,
+    lastName,
+    email,
+    password: hashedPassword,
+    roleId,
+    companyId,
+    createdBy,
+    typeDocumentId,
+    documentNumber,
+    phoneNumber,
   };
 
-  try {
-    // Llamar al servicio de actualización
-    const updatedUser = await updateUserService(payload);
+  const newUser = await createUserService(userData);
+  res.status(201).json(successResponse({ message: SUCCESS_MESSAGES.userCreated, data: newUser }));
+});
 
-    // Retornar la respuesta con el usuario actualizado
-    res.status(200).json(updatedUser);
-  } catch (error: any) {
-    console.error(error); // Para depuración
-    res.status(500).json({ error: `Error al actualizar el usuario: ${error.message}` });
-  }
-};
-
-// Deshabilitar y habilitar un usuario por ID
-export const toggleUserStatusController = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-
-    // Llamamos al servicio para cambiar el estado del usuario
-    const result = await toggleUserStatusService({ id: parseInt(id) });
-
-    // Verificamos el resultado del servicio
-    if (!result.status) {
-      res.status(404).json(result); // Usuario no encontrado o no se pudo actualizar
-      return;
-    }
-    res.status(200).json(result);
-  } catch (error) {
-    console.error(error); // Para depuración
-    res.status(500).json({ error: 'Error al actualizar el estado del usuario' });
-  }
-};
-
-// Crear un nuevo usuario
-export const createUserController = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      roleId,
-      companyId,
-      createdBy,
-      typeDocumentId,
-      documentNumber,
-      phoneNumber,
-    } = req.body;
-
-    const saltRounds = config.LIMIT_PASSWORD!;
-
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    const payload: InferCreationAttributes<User, { omit: 'id' | 'createdAt' | 'updatedAt' }> = {
-      firstName,
-      lastName,
-      email,
-      password: hashedPassword,
-      roleId,
-      companyId,
-      createdBy,
-      typeDocumentId,
-      documentNumber,
-      phoneNumber,
-    };
-    const newUser = await createUserService(payload);
-    res.status(201).json(newUser);
-  } catch (error: any) {
-    res.status(500).json({ error: `Error al crear el usuario: ${error.message}` });
-  }
-};
-
-
-// Obtener un usuario por correo
-export const getUserByEmailController = async (req: Request, res: Response): Promise<void> => {
+export const getUserByEmailController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email } = req.params;
-  try {
-    const user = await getUserByEmailService({ email });
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener el usuario' });
-  }
-};
+  const user = await getUserByEmailService({ email });
+  res.status(200).json(successResponse({ message: SUCCESS_MESSAGES.userFoundEmail(email), data: user }));
+});
 
+export const getRolesController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const roles = await getRolesService();
+  res.status(200).json(successResponse({ message: SUCCESS_MESSAGES.rolesFound, data: roles }));
+});
 
-
-// Obtener roles
-export const getRolesController = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const roles = await getRolesService();
-    res.status(200).json(roles);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener roles' });
-  }
-};
-
-// Obtener tipos de documento
-export const getTypeDocumentsController = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const TypeDocuments = await getTypeDocumentsService();
-    res.status(200).json(TypeDocuments);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener los tipos de documentos.' });
-  }
-};
+export const getTypeDocumentsController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const typeDocuments = await getTypeDocumentsService();
+  res.status(200).json(successResponse({ message: SUCCESS_MESSAGES.typeDocsFound, data: typeDocuments }));
+});

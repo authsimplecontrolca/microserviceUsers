@@ -13,14 +13,14 @@ export const updateUserService = async ({
   typeDocumentId,
 }: {
   id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  reputation: number;
-  roleId: number;
-  documentNumber: string;
-  phoneNumber: string;
-  typeDocumentId: number;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  reputation?: number;
+  roleId?: number;
+  documentNumber?: string;
+  phoneNumber?: string;
+  typeDocumentId?: number;
 }) => {
   try {
     // Preparar el payload para la actualización
@@ -39,12 +39,9 @@ export const updateUserService = async ({
     const [updated] = await User.update(payload, { where: { id } });
 
     // Si no se actualizó ningún registro
-    if (!updated) return { status: false, message: 'No se pudo actualizar el usuario.' };
+    if (!updated) return false;
 
-    return {
-      status: true,
-      message: 'Usuario actualizado con éxito.',
-    };
+    return true;
   } catch (error: any) {
     console.error(error); // Para depuración
     return {

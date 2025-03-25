@@ -18,7 +18,7 @@ registerModels(DataBase);
 // Sincronizamos la base de datos (esto crea las tablas)
 const syncDatabase = async () => {
   try {
-    await DataBase.sync({ alter: true }); // `force: false` no borra las tablas existentes, cambia a `true` si deseas que se borren.
+    await DataBase.sync({ alter: false }); // `force: false` no borra las tablas existentes, cambia a `true` si deseas que se borren.
     console.log('✅ Tablas sincronizadas con éxito');
   } catch (error) {
     console.error('❌ Error al sincronizar las tablas:', error);
@@ -37,3 +37,4 @@ export const connectDB = async () => {
     console.error('❌ Error al conectar a la base de datos:', error);
   }
 };
+

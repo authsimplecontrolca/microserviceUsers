@@ -120,7 +120,6 @@ export const getAllUsersService = async ({
 
     // Devolver la respuesta con los usuarios y la información de paginación
     return {
-      message: 'listado de usuarios encontrados',
       users,
       totalUsers,
       totalPages: Math.ceil(totalUsers / limit),
@@ -170,7 +169,7 @@ export const getUserByIdService = async ({ id }: { id: number }) => {
       type: QueryTypes.SELECT,
     });
 
-    return { isActive: true, messge: `Usuario encontrado con el id ${id}`, user: user![0] }; // Sequelize devuelve un array, devolver el primer elemento
+    return user![0]; // Sequelize devuelve un array, devolver el primer elemento
   } catch (error: any) {
     console.log(error);
 
@@ -215,9 +214,7 @@ export const getUserByEmailService = async ({ email }: { email: string }) => {
       type: QueryTypes.SELECT,
     });
 
-    console.log({ user });
-
-    return { isActive: true, messge: `Usuario encontrado con el correo ${email}`, user: user![0] }; // Sequelize devuelve un array, devolver el primer elemento
+    return user![0]; // Sequelize devuelve un array, devolver el primer elemento
   } catch (error: any) {
     console.log(error);
 
@@ -230,7 +227,7 @@ export const getRolesService = async () => {
     // Ejecutar la consulta con el parámetro I
     const roles = await Role.findAll({ where: { isActive: true } });
 
-    return { totalRoles: roles.length, messge: `Roles activos encontrados`, roles };
+    return { totalRoles: roles.length, roles };
   } catch (error: any) {
     console.log(error);
 
@@ -243,7 +240,7 @@ export const getTypeDocumentsService = async () => {
     // Ejecutar la consulta con el parámetro I
     const typeDocuments = await TypeDocument.findAll({ where: { isActive: true } });
 
-    return { totalTypeDocuments: typeDocuments.length, messge: `Roles activos encontrados`, typeDocuments };
+    return { totalTypeDocuments: typeDocuments.length, typeDocuments };
   } catch (error: any) {
     console.log(error);
 
