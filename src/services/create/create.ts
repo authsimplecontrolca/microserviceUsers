@@ -9,6 +9,6 @@ export const createUserService = async (payload: InferCreationAttributes<User>) 
     const { password, ...user } = dataValues;
     return user;
   } catch (error: any) {
-    throw new Error(`${error.message}`);
+    throw new Error(`Error al crear el usuario: ${error.message}`);
   }
 };

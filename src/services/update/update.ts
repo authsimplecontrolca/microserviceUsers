@@ -11,6 +11,7 @@ export const updateUserService = async ({
   documentNumber,
   phoneNumber,
   typeDocumentId,
+  updatedBy
 }: {
   id: number;
   firstName?: string;
@@ -21,6 +22,7 @@ export const updateUserService = async ({
   documentNumber?: string;
   phoneNumber?: string;
   typeDocumentId?: number;
+  updatedBy:number
 }) => {
   try {
     // Preparar el payload para la actualización
@@ -33,6 +35,7 @@ export const updateUserService = async ({
       documentNumber,
       phoneNumber,
       typeDocumentId,
+      updatedBy
     };
 
     // Realizar la actualización
@@ -44,21 +47,17 @@ export const updateUserService = async ({
     return true;
   } catch (error: any) {
     console.error(error); // Para depuración
-    return {
-      status: false,
-      message: 'Error al actualizar el usuario: ' + error.message,
-    };
+    throw new Error(`Error al editar el usuario: ${error.message}`);
   }
 };
 
-export const toggleUserStatusService = async ({ id }: { id: number }) => {
+export const toggleUserStatusService = async ({ id, updatedBy }: { id: number, updatedBy:number }) => {
   try {
     // Buscar el usuario
     const user = await User.findByPk(id, { raw: true });
-    console.log(user);
 
     // Cambiar el estado de 'isActive' (habilitar/deshabilitar)
-    const updatedUser = await User.update({ isActive: !user!.isActive }, { where: { id } });
+    const updatedUser = await User.update({ isActive: !user!.isActive, updatedBy }, { where: { id } });
 
     // Verificar si se realizó la actualización
     if (updatedUser[0] === 0) {
@@ -69,8 +68,28 @@ export const toggleUserStatusService = async ({ id }: { id: number }) => {
       status: true,
       message: `Usuario ${user!.isActive ? 'deshabilitado' : 'habilitado'} con éxito.`,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { status: false, message: 'Error al actualizar el estado del usuario.' };
+    throw new Error(`Error al cambiar el estado al usuario: ${error.message}`);
+  }
+};
+
+// update password
+export const updatePasswordService = async ({ email, password }: { email: string; password: string }) => {
+  try {
+    
+    // Preparar el payload para la actualización
+    const payload = { password };
+
+    // Realizar la actualización
+    const [updated] = await User.update(payload, { where: { email} });
+
+    // Si no se actualizó ningún registro
+    if (!updated) return false;
+
+    return true;
+  } catch (error: any) {
+    console.error(error); // Para depuración
+    throw new Error(`Error al editar la contraseña del usuario: ${error.message}`);
   }
 };

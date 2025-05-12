@@ -74,4 +74,7 @@ export class User extends Model<InferCreationAttributes<User>> {
 
   @Column(DataType.INTEGER)
   createdBy!: number;
+
+  @Column(DataType.INTEGER)
+  updatedBy?: number;
 }

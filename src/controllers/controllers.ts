@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import bcrypt from 'bcrypt';
-
 import { createUserService } from '../services/create/create';
 import {
   getAllUsersService,
@@ -10,7 +9,7 @@ import {
   getRolesService,
   getTypeDocumentsService,
 } from '../services/find/find';
-import { toggleUserStatusService, updateUserService } from '../services/update/update';
+import { toggleUserStatusService, updatePasswordService, updateUserService } from '../services/update/update';
 import { User } from '../models/user';
 import { config } from '../utils/config';
 import { errorResponse, successResponse } from '../utils/bodyResponseApi';
@@ -21,11 +20,14 @@ const SUCCESS_MESSAGES = {
   userFound: (id: string) => `Resultado de la búsqueda con el ID ${id}`,
   userCreated: 'Usuario creado con éxito',
   userUpdated: 'Usuario actualizado correctamente',
-  userNoUpdated: 'Usuario no actualizado, no hubo cambios.',
+  userNoUpdated: 'Usuario no actualizado, no hubo cambios',
   userStatusToggled: 'Estado del usuario actualizado correctamente',
   rolesFound: 'Roles activos encontrados',
   typeDocsFound: 'Tipos de documentos activos encontrados',
   userFoundEmail: (email: string) => `Resultado de la búsqueda con el correo ${email}`,
+  recoverPassword: 'La contraseña ha sido recuperada con éxito. Puedes acceder a tu cuenta ahora.',
+  errorRecoverPassword:
+    'No se ha podido restablecer la contraseña. Por favor, verifica los datos proporcionados y vuelve a intentarlo.',
 };
 
 export const getAllUsersController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -41,7 +43,8 @@ export const getUserByIdController = asyncHandler(async (req: Request, res: Resp
 
 export const updateUserController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { firstName, lastName, email, reputation, roleId, documentNumber, phoneNumber, typeDocumentId } = req.body;
+  const { firstName, lastName, email, reputation, roleId, documentNumber, phoneNumber, typeDocumentId, updatedBy } =
+    req.body;
 
   const payload: any = { id }; // se inicia el objeto con el id
 
@@ -53,6 +56,7 @@ export const updateUserController = asyncHandler(async (req: Request, res: Respo
   if (documentNumber) payload.documentNumber = String(documentNumber);
   if (phoneNumber) payload.phoneNumber = String(phoneNumber);
   if (typeDocumentId) payload.typeDocumentId = Number(typeDocumentId);
+  if (updatedBy) payload.updatedBy = Number(updatedBy);
 
   const wasUpdated = await updateUserService(payload);
 
@@ -64,8 +68,8 @@ export const updateUserController = asyncHandler(async (req: Request, res: Respo
 });
 
 export const toggleUserStatusController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-  const result = await toggleUserStatusService({ id: Number(id) });
+  const { id, updatedBy } = req.params;
+  const result = await toggleUserStatusService({ id: Number(id), updatedBy: Number(updatedBy) });
 
   if (!result.status) {
     res.status(400).json(errorResponse({ message: result.message }));
@@ -121,4 +125,17 @@ export const getRolesController = asyncHandler(async (req: Request, res: Respons
 export const getTypeDocumentsController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const typeDocuments = await getTypeDocumentsService();
   res.status(200).json(successResponse({ message: SUCCESS_MESSAGES.typeDocsFound, data: typeDocuments }));
+});
+
+export const updatePasswordController = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { email, password } = req.body;
+
+  const hashedPassword = await bcrypt.hash(password, config.LIMIT_PASSWORD!);
+
+  const resp = await updatePasswordService({ password: hashedPassword, email });
+  if (!resp) {
+    res.status(400).json(errorResponse({ message: SUCCESS_MESSAGES.errorRecoverPassword }));
+    return;
+  }
+  res.status(200).json(successResponse({ message: SUCCESS_MESSAGES.recoverPassword }));
 });

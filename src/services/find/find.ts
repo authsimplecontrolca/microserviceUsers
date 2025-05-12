@@ -27,16 +27,6 @@ export const getAllUsersService = async ({
   try {
     // Calcular el offset para la paginación
     const offset = (page - 1) * limit;
-    console.log({
-      dateInit,
-      dateEnd,
-      isActive,
-      search,
-      roleId,
-      companyId,
-      page, // Página por defecto es la 1
-      limit, // Número de resultados por página por defecto
-    });
 
     // Construir la consulta SQL con los filtros y paginación
     const query = `
@@ -57,7 +47,7 @@ export const getAllUsersService = async ({
       r.isActive AS activeRole,
       td.typeDocumentName,
       td.isActive AS activeTypeDocument,
-      c.companyName,
+      c.commercialName,
       c.isActive AS activeCompany
       FROM users as u
       INNER JOIN roles as r on (u.roleId = r.id)
@@ -85,7 +75,7 @@ export const getAllUsersService = async ({
         offset: offset,
       },
       type: QueryTypes.SELECT,
-      logging: (sql) => console.log('Ejecutando SQL:', sql),
+      // logging: (sql) => console.log('Ejecutando SQL:', sql),
     });
 
     // Obtener el total de usuarios para la paginación
@@ -127,8 +117,8 @@ export const getAllUsersService = async ({
       perPage: limit,
     };
   } catch (error: any) {
-    console.log(error);
-
+    console.log({error});
+    
     throw new Error('Error al obtener los usuarios: ' + error.message);
   }
 };
@@ -154,7 +144,7 @@ export const getUserByIdService = async ({ id }: { id: number }) => {
       r.isActive AS activeRole,
       td.typeDocumentName,
       td.isActive AS activeTypeDocument,
-      c.companyName,
+      c.commercialName,
       c.isActive AS activeCompany
       FROM users u
       INNER JOIN roles r ON u.roleId = r.id
@@ -171,8 +161,6 @@ export const getUserByIdService = async ({ id }: { id: number }) => {
 
     return user![0]; // Sequelize devuelve un array, devolver el primer elemento
   } catch (error: any) {
-    console.log(error);
-
     throw new Error('Error al obtener el usuario: ' + error.message);
   }
 };
@@ -199,7 +187,7 @@ export const getUserByEmailService = async ({ email }: { email: string }) => {
       r.isActive AS activeRole,
       td.typeDocumentName,
       td.isActive AS activeTypeDocument,
-      c.companyName,
+      c.commercialName,
       c.isActive AS activeCompany
       FROM users u
       INNER JOIN roles r ON u.roleId = r.id
@@ -213,11 +201,10 @@ export const getUserByEmailService = async ({ email }: { email: string }) => {
       replacements: { email },
       type: QueryTypes.SELECT,
     });
+console.log({user});
 
     return user![0]; // Sequelize devuelve un array, devolver el primer elemento
   } catch (error: any) {
-    console.log(error);
-
     throw new Error('Error al obtener el usuario: ' + error.message);
   }
 };
@@ -229,8 +216,6 @@ export const getRolesService = async () => {
 
     return { totalRoles: roles.length, roles };
   } catch (error: any) {
-    console.log(error);
-
     throw new Error('Error al obtener los roles: ' + error.message);
   }
 };
@@ -242,8 +227,6 @@ export const getTypeDocumentsService = async () => {
 
     return { totalTypeDocuments: typeDocuments.length, typeDocuments };
   } catch (error: any) {
-    console.log(error);
-
     throw new Error('Error al obtener los tipos de documentos: ' + error.message);
   }
 };

@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import { connectDB } from './config/database';
 import { router } from './routes/routes';
 import { config } from './utils/config';
@@ -28,7 +28,7 @@ app.use(errorHandler);
 const startServer = async () => {
   await connectDB();
   app.listen(PORT, () => {
-    console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`✅ Servidor USER corriendo en http://localhost:${PORT}`);
   });
 };
 
